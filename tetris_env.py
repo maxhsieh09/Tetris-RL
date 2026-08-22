@@ -31,14 +31,15 @@ BLOCK_BORDER = 1
 
 
 class TetrisEnv(gym.Env[dict, np.ndarray]):
-    def __init__(self, width=10, height=20, render_mode=None, fps=60):
+    def __init__(self, width=10, height=20, render_mode=None, fps=60, render_last_only=False):
         self.shape = (width, height)
         self.render_mode = render_mode
         self.fps = fps
+        self.render_last_only = render_last_only
 
         self.observation_space = gym.spaces.Dict(
             {
-                "board": gym.spaces.Box(low=0, high=1, shape=self.shape),
+                "board": gym.spaces.Box(low=0, high=1, shape=(1, *self.shape)),
                 "piece": gym.spaces.Discrete(7)
             }
         )
@@ -54,7 +55,7 @@ class TetrisEnv(gym.Env[dict, np.ndarray]):
         self.font = None
 
     def _get_obs(self):
-        return {"board": self.board.astype(np.float32), "piece": self.piece_idx}
+        return {"board": self.board[None, :, :].astype(np.float32), "piece": self.piece_idx}
 
     def _get_info(self):
         return {"score": self.total_reward}
@@ -100,6 +101,8 @@ class TetrisEnv(gym.Env[dict, np.ndarray]):
 
             if intersection.sum() > 0:
                 if y == 0: # Game over
+                    if self.render_mode == "human" and self.render_last_only:
+                        self.render()
                     return self._get_obs(), 0., True, False, self._get_info()
                 else:
                     y -= 1
@@ -122,7 +125,7 @@ class TetrisEnv(gym.Env[dict, np.ndarray]):
         self.piece_idx = self._sample_piece()
         self.total_reward += reward
 
-        if self.render_mode == "human":
+        if self.render_mode == "human" and not self.render_last_only:
             self.render()
 
         return self._get_obs(), reward, False, False, self._get_info()
