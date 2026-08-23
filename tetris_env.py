@@ -2,6 +2,7 @@ import random
 
 import gymnasium as gym
 from gymnasium.utils.env_checker import check_env
+from stable_baselines3.common.vec_env import DummyVecEnv
 import numpy as np
 
 # Use (x, y) instead of (row, col) convention everywhere
@@ -182,15 +183,26 @@ def expand_actions(env):
     )
 
 
+def make_vec_env(expanded_actions=False, n_envs=1, **kwargs):
+    def _make_env():
+        env = TetrisEnv(**kwargs)
+        if expanded_actions:
+            env = expand_actions(env)
+        return env
+
+    return DummyVecEnv([_make_env] * n_envs)
+
+
 check_env(TetrisEnv())
 
 if __name__ == "__main__":
-    env = TetrisEnv(render_mode="human", fps=10)
-    env = expand_actions(env)
+    #env = TetrisEnv(render_mode="human", fps=10)
+    #env = expand_actions(env)
+    env = make_vec_env(expanded_actions=True, render_mode="human", fps=10)
     env.reset()
 
     for _ in range(1000):
-        state, reward, terminated, _, _ = env.step(env.action_space.sample())
+        state, reward, terminated, info = env.step([env.action_space.sample()])
         if terminated:
             env.reset()
 
