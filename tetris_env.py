@@ -43,7 +43,7 @@ class TetrisEnv(gym.Env[dict, np.ndarray]):
                 "piece": gym.spaces.Discrete(7)
             }
         )
-        self.action_space = gym.spaces.MultiDiscrete([10, 4])  # x, rotation
+        self.action_space = gym.spaces.MultiDiscrete([width, 4])  # x, rotation
 
         self.board = np.zeros(self.shape, dtype=np.uint8)
         self.piece_queue = []
@@ -174,10 +174,19 @@ class TetrisEnv(gym.Env[dict, np.ndarray]):
             pygame.quit()
 
 
+def expand_actions(env):
+    width = env.shape[0]
+    return gym.wrappers.TransformAction(
+        env, lambda action: np.array([action // 4, action % 4]),
+        gym.spaces.Discrete(width * 4)
+    )
+
+
 check_env(TetrisEnv())
 
 if __name__ == "__main__":
     env = TetrisEnv(render_mode="human", fps=10)
+    env = expand_actions(env)
     env.reset()
 
     for _ in range(1000):
