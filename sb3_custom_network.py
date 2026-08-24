@@ -39,4 +39,4 @@ model = DQN(
 print(model.policy)
 model.learn(total_timesteps=500000)
 
-model.save("tetris_model")
+model.save("models/tetris_model")
